@@ -1,1 +1,1 @@
-I Just Practice with FastApi framework
+This is my practice area for writing my fastapi framework.

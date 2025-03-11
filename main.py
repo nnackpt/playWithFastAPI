@@ -43,6 +43,10 @@ async def process_register(request: Request, email: str = Form(...), password: s
 async def read_home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
+@app.get("/profile", response_class=HTMLResponse)
+async def read_home(request: Request):
+    return templates.TemplateResponse("profile.html", {"request": request})
+
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
     return RedirectResponse("/", status_code=302)

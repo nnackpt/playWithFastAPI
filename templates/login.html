@@ -11,29 +11,22 @@
       <input type="checkbox" id="check">
       <div class="login form">
         <header>Login</header>
+        
         <form action="/login" method="post">
-          <input type="text" name="email" placeholder="Enter your email">
+          <input type="text" name="username" placeholder="Enter your username ">
           <input type="password" name="password" placeholder="Enter your password">
+          {% if error_message %}
+        <div class="error-message">
+            <span class="error-icon">&#9888;</span>
+            <span>{{ error_message }}</span>
+        </div>
+        {% endif %}
           <a href="#">Forgot password?</a>
           <input type="submit" class="button" value="Login">
         </form>
         <div class="signup">
           <span class="signup">Don't have an account?
-           <label for="check">Signup</label>
-          </span>
-        </div>
-      </div>
-      <div class="registration form">
-        <header>Signup</header>
-        <form action="/register" method="post">
-          <input type="text" name="email" placeholder="Enter your email">
-          <input type="password" name="password" placeholder="Create a password">
-          <input type="password" name="confirm_password" placeholder="Confirm your password">
-          <input type="submit" class="button" value="Signup">
-        </form>
-        <div class="signup">
-          <span class="signup">Already have an account?
-           <label for="check">Login</label>
+           <a for="check" href="/register">Signup</a>
           </span>
         </div>
       </div>

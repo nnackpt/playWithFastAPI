@@ -9,7 +9,7 @@
 body{
   min-height: 100vh;
   width: 100%;
-  background: #009579;
+  background: linear-gradient(135deg, #71b7e6, #9b59b6);
 }
 .container{
   position: absolute;
@@ -21,12 +21,6 @@ body{
   background: #fff;
   border-radius: 7px;
   box-shadow: 0 5px 10px rgba(0,0,0,0.3);
-}
-.container .registration{
-  display: none;
-}
-#check:checked ~ .registration{
-  display: block;
 }
 #check:checked ~ .login{
   display: none;
@@ -58,7 +52,7 @@ body{
  }
 .form a{
   font-size: 16px;
-  color: #009579;
+  color: #9b59b6;
   text-decoration: none;
 }
 .form a:hover{
@@ -66,7 +60,7 @@ body{
 }
 .form input.button{
   color: #fff;
-  background: #009579;
+  background: linear-gradient(135deg, #71b7e6, #9b59b6);
   font-size: 1.2rem;
   font-weight: 500;
   letter-spacing: 1px;
@@ -75,7 +69,7 @@ body{
   transition: 0.4s;
 }
 .form input.button:hover{
-  background: #006653;
+  background: linear-gradient(-135deg, #71b7e6, #9b59b6);
 }
 .signup{
   font-size: 17px;
@@ -87,4 +81,29 @@ body{
 }
 .signup label:hover{
   text-decoration: underline;
+}
+.error-message {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border-left: 4px solid #f44336;
+  padding: 12px 16px;
+  margin: 15px auto;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 350px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  animation: fadeIn 0.5s ease-in-out;
+  margin-top: 0%;
+}
+
+.error-icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

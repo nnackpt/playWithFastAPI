@@ -6,6 +6,7 @@
     <title>Home</title>
     <link rel="stylesheet" href="/static/css/home.css">
     <link href="https://fonts.googleapis.com/css2?family=Gabarito:wght@400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <nav class="navbar">
@@ -15,7 +16,13 @@
                 <li><a href="/home" class="active">Home</a></li>   
                 <li><a href="/profile">Profile</a></li>
                 <li><a href="#">Contact Us</a></li>
-                <li><button class="logout-btn" id="logoutBtn">Log Out</button></li>
+                <li>
+                    {% if user_logged_in %}
+                    <a href="/logout" class="auth-btn logout-btn"><i class="fas fa-sign-out-alt"></i> Log Out</a>
+                    {% else %}
+                    <a href="/login-page" class="auth-btn login-btn"><i class="fas fa-sign-in-alt"></i> Log In</a>
+                    {% endif %}
+                </li>
             </ul>
         </div>
     </nav>

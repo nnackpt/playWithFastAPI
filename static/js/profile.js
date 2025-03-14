@@ -1,5 +1,354 @@
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('logoutBtn').addEventListener('click', function() {
-        window.location.href = '/logout';
+    const personalInfoForm = document.getElementById('personal-info-form');
+    if (personalInfoForm) {
+        personalInfoForm.addEventListener('wheel', function(e) {
+            // Prevent the default scroll behavior
+            e.preventDefault();
+        }, { passive: false });
+    }
+    // Load user data from API
+    loadUserData();
+    
+    // Setup menu tab switching
+    const menuItems = document.querySelectorAll('.profile-menu li');
+    menuItems.forEach(item => {
+        item.addEventListener('click', function() {
+            // Remove active class from all items
+            menuItems.forEach(menuItem => menuItem.classList.remove('active'));
+            // Add active class to clicked item
+            this.classList.add('active');
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('.profile-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Show selected section
+            const sectionId = this.getAttribute('data-section');
+            document.getElementById(sectionId).classList.add('active');
+        });
     });
-}); 
+    
+    // Setup password toggle visibility
+    const togglePasswordBtns = document.querySelectorAll('.toggle-password');
+    togglePasswordBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const passwordInput = this.previousElementSibling;
+            
+            // Toggle password visibility
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                this.classList.remove('fa-eye-slash');
+                this.classList.add('fa-eye');
+            } else {
+                passwordInput.type = 'password';
+                this.classList.remove('fa-eye');
+                this.classList.add('fa-eye-slash');
+            }
+        });
+    });
+    
+    // Password strength meter
+    const newPasswordInput = document.getElementById('new-password');
+    if (newPasswordInput) {
+        newPasswordInput.addEventListener('input', updatePasswordStrength);
+    }
+    
+    // Form submissions
+    setupFormSubmission('personal-info-form', '/api/update-profile', 'Profile information updated successfully!');
+    setupFormSubmission('security-form', '/api/update-password', 'Password updated successfully!');
+    setupFormSubmission('preferences-form', '/api/update-preferences', 'Preferences saved successfully!');
+    
+    // Profile image upload handling
+    const profileAvatar = document.querySelector('.profile-avatar');
+    if (profileAvatar) {
+        profileAvatar.addEventListener('click', function() {
+            // Create hidden file input
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        document.getElementById('profile-image').src = event.target.result;
+                        
+                        // TODO: Upload to server
+                        // uploadProfileImage(e.target.files[0]);
+                        
+                        // Show success message
+                        showSuccessModal('Profile picture updated successfully!');
+                    };
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            document.body.appendChild(fileInput);
+            fileInput.click();
+            document.body.removeChild(fileInput);
+        });
+    }
+    
+    // Setup logout modal
+    setupLogoutModal();
+    
+    // Success modal handling
+    setupSuccessModal();
+});
+
+// Function to load user data from API
+function loadUserData() {
+    // In a real application, this would fetch data from your API
+    // For now, we'll simulate with sample data
+    const userData = {
+        full_name: "User Name",
+        email: "user@example.com",
+        phone_number: "+66 123 456 789",
+        gender: "male",
+        preferences: {
+            email_notifications: true,
+            dark_mode: false,
+            language: "en"
+        }
+    };
+    
+    // Fill form fields with user data
+    if (document.getElementById('full-name')) {
+        document.getElementById('full-name').value = userData.full_name;
+    }
+    if (document.getElementById('email')) {
+        document.getElementById('email').value = userData.email;
+    }
+    if (document.getElementById('phone')) {
+        document.getElementById('phone').value = userData.phone_number;
+    }
+    if (document.getElementById('gender')) {
+        document.getElementById('gender').value = userData.gender;
+    }
+    
+    // Set preferences
+    if (document.querySelector('input[name="email_notifications"]')) {
+        document.querySelector('input[name="email_notifications"]').checked = userData.preferences.email_notifications;
+    }
+    if (document.querySelector('input[name="dark_mode"]')) {
+        document.querySelector('input[name="dark_mode"]').checked = userData.preferences.dark_mode;
+    }
+    if (document.getElementById('language')) {
+        document.getElementById('language').value = userData.preferences.language;
+    }
+}
+
+// Function to handle form submissions
+function setupFormSubmission(formId, endpoint, successMessage) {
+    const form = document.getElementById(formId);
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Create form data
+            const formData = new FormData(form);
+            const data = {};
+            for (const [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // In a real application, you would send this data to your server
+            console.log(`Submitting to ${endpoint}:`, data);
+            
+            // Simulate API call with timeout
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            // Simulate API call (replace with actual fetch in production)
+            setTimeout(() => {
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                // Show success message
+                showSuccessModal(successMessage);
+            }, 1000);
+        });
+    }
+}
+
+// Function to update password strength meter
+function updatePasswordStrength() {
+    const password = document.getElementById('new-password').value;
+    const strengthBar = document.querySelector('.strength-bar');
+    const strengthText = document.querySelector('.strength-text');
+    
+    // Password strength criteria
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChars = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const isLongEnough = password.length >= 8;
+    
+    // Calculate strength
+    let strength = 0;
+    if (hasLowerCase) strength += 1;
+    if (hasUpperCase) strength += 1;
+    if (hasNumbers) strength += 1;
+    if (hasSpecialChars) strength += 1;
+    if (isLongEnough) strength += 1;
+    
+    // Update UI based on strength
+    let percentage = (strength / 5) * 100;
+    let color, text;
+    
+    if (password === '') {
+        percentage = 0;
+        color = '#e0e0e0';
+        text = '';
+    } else if (percentage <= 20) {
+        color = '#ff4d4d';
+        text = 'Very Weak';
+    } else if (percentage <= 40) {
+        color = '#ff9933';
+        text = 'Weak';
+    } else if (percentage <= 60) {
+        color = '#ffcc00';
+        text = 'Fair';
+    } else if (percentage <= 80) {
+        color = '#99cc33';
+        text = 'Good';
+    } else {
+        color = '#33cc33';
+        text = 'Strong';
+    }
+    
+    strengthBar.style.width = `${percentage}%`;
+    strengthBar.style.backgroundColor = color;
+    strengthText.textContent = text;
+}
+
+// Setup success modal
+function setupSuccessModal() {
+    const modal = document.getElementById('success-modal');
+    const closeBtn = modal.querySelector('.close-modal');
+    const okBtn = document.getElementById('modal-ok-btn');
+    
+    // Close modal when X is clicked
+    closeBtn.addEventListener('click', function() {
+        closeModal(modal);
+    });
+    
+    // Close modal when OK is clicked
+    okBtn.addEventListener('click', function() {
+        closeModal(modal);
+    });
+    
+    // Close when clicking outside modal
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeModal(modal);
+        }
+    });
+}
+
+// Function to show success modal
+function showSuccessModal(message) {
+    const modal = document.getElementById('success-modal');
+    const messageElement = document.getElementById('success-message');
+    
+    messageElement.textContent = message;
+    modal.style.display = 'flex';
+    
+    // Add class for animation
+    setTimeout(() => {
+        modal.querySelector('.modal-content').classList.add('show');
+    }, 10);
+}
+
+// Setup logout modal
+function setupLogoutModal() {
+    // Create modal elements
+    const modalHTML = `
+        <div id="logout-modal" class="custom-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Log Out?</h3>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel-logout" class="btn cancel-btn">Cancel</button>
+                    <button id="confirm-logout" class="btn confirm-btn">
+                        <i class="fas fa-sign-out-alt"></i> Yes, Log Out
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Append modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Get modal elements
+    const modal = document.getElementById('logout-modal');
+    const closeBtn = modal.querySelector('.close-modal');
+    const cancelBtn = document.getElementById('cancel-logout');
+    const confirmBtn = document.getElementById('confirm-logout');
+    
+    // Get logout link
+    const logoutLink = document.getElementById('logout-link');
+    
+    // Show modal when logout is clicked
+    if (logoutLink) {
+        logoutLink.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default link behavior
+            modal.style.display = 'flex';
+            // Add class for animation
+            setTimeout(() => {
+                modal.querySelector('.modal-content').classList.add('show');
+            }, 10);
+        });
+    }
+    
+    // Close modal when X is clicked
+    closeBtn.addEventListener('click', function() {
+        closeModal(modal);
+    });
+    
+    // Close modal when Cancel is clicked
+    cancelBtn.addEventListener('click', function() {
+        closeModal(modal);
+    });
+    
+    // Logout when Confirm is clicked
+    confirmBtn.addEventListener('click', function() {
+        // Add loading state
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out...';
+        confirmBtn.disabled = true;
+        
+        // Redirect after a short delay to show loading state
+        setTimeout(() => {
+            window.location.href = '/logout';
+        }, 800);
+    });
+    
+    // Close when clicking outside modal
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeModal(modal);
+        }
+    });
+}
+
+// Function to close modal with animation
+function closeModal(modal) {
+    modal.querySelector('.modal-content').classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+    }, 300);
+}

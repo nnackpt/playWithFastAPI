@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Form, Depends, BackgroundTasks
+from fastapi import FastAPI, Request, Form, Depends, BackgroundTasks, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -74,6 +74,10 @@ def send_reset_email(email, reset_token, reset_url):
         return False
 
 @app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    return RedirectResponse("/home", status_code=302)
+
+@app.get("/login-page", response_class=HTMLResponse)
 async def read_login_register(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
@@ -81,7 +85,10 @@ async def read_login_register(request: Request):
 async def process_login(request: Request, username: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(database.User).filter(database.User.username == username).first()
     if user and user.hashed_password == password:
-        return RedirectResponse("/home", status_code=302)
+        response = RedirectResponse("/home", status_code=302)
+        response.set_cookie(key="user_logged_in", value="true", httponly=True)
+        response.set_cookie(key="username", value=username, httponly=True)
+        return response
     else:
         return templates.TemplateResponse("login.html", {"request": request, "error_message": "Invalid username or password"})
 
@@ -183,15 +190,33 @@ async def process_reset_password(
 
 @app.get("/home", response_class=HTMLResponse)
 async def read_home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
+    user_logged_in = request.cookies.get("user_logged_in") == "true"
+    username = request.cookies.get("username")
+
+    return templates.TemplateResponse("home.html", {
+        "request": request,
+        "user_logged_in": user_logged_in,
+        "username": username
+    })
 
 @app.get("/profile", response_class=HTMLResponse)
 async def read_profile(request: Request):
-    return templates.TemplateResponse("profile.html", {"request": request})
+    user_logged_in = request.cookies.get("user_logged_in") == "true"
+    if not user_logged_in:
+        return RedirectResponse("/login-page", status_code=302)
+    
+    username = request.cookies.get("username")
+    return templates.TemplateResponse("profile.html", {
+        "request": request,
+        "username": username,
+    })
 
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
-    return RedirectResponse("/", status_code=302)
+    response = RedirectResponse("/home", status_code=302)
+    response.delete_cookie("user_logged_in")
+    response.delete_cookie("username")
+    return response
 
 @app.get("/register", response_class=HTMLResponse)
 async def read_register(request: Request):

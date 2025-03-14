@@ -222,6 +222,16 @@ async def logout(request: Request):
 async def read_register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
+@app.get("/contact", response_class=HTMLResponse)
+async def read_contact(request: Request):
+    user_logged_in = request.cookies.get("user_logged_in") == "true"
+    username = request.cookies.get("username")
+    return templates.TemplateResponse("contact.html", {
+        "request": request,
+        "user_logged_in": user_logged_in,
+        "username": username
+    })
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

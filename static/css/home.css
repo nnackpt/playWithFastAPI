@@ -10,7 +10,7 @@ body {
 }
 
 .navbar {
-    background-color: #333;
+    background: #1D1616;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
@@ -57,7 +57,7 @@ body {
 }
 
 .nav-links a:hover {
-    color: #4dabf7;
+    color: #D84040;
 }
 
 .nav-links a::after {
@@ -65,7 +65,7 @@ body {
     position: absolute;
     width: 0;
     height: 2px;
-    background-color: #4dabf7;
+    background-color: #8E1616;
     bottom: 0;
     left: 0;
     transition: width 0.3s ease;
@@ -75,17 +75,49 @@ body {
     width: 100%;
 }
 
-.logout-btn {
-    color: white;
-    background-color: #e74c3c;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
-}
-
-.logout-btn:hover {
-    background-color: #c0392b;
-}
+.auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    min-width: 100px;
+    min-height: 40px;
+    white-space: nowrap;
+  }
+  
+  .auth-btn i {
+    margin-right: 8px;
+    font-size: 14px;
+  }
+  
+  .login-btn {
+    background-color: #D84040;
+    color: white !important;
+    border: 2px solid #D84040;
+  }
+  
+  .login-btn:hover {
+    background-color: #8E1616;
+    border-color: #8E1616;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .logout-btn {
+    background-color: #D84040;
+    color: white !important;
+    border: 2px solid #D84040;
+  }
+  
+  .logout-btn:hover {
+    background-color: #8E1616;
+    border-color: #8E1616;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .auth-btn::after {
+    display: none;
+  }

@@ -1,62 +1,64 @@
 body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #71b7e6, #9b59b6);
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #8e1616, #1d1616);
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
-}
-
-.success-container {
-    background: white;
+  }
+  
+  .success-container {
+    background: #eeeeee;
     border-radius: 8px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     text-align: center;
     padding: 40px;
     width: 400px;
-}
-
-.success-icon {
+  }
+  
+  .success-icon {
     font-size: 80px;
-    color: #4CAF50;
+    color: #d84040;
     margin-bottom: 20px;
-}
-
-h1 {
-    color: #333;
+  }
+  
+  h1 {
+    color: #1d1616;
     margin-bottom: 15px;
-}
-
-p {
-    color: #666;
+  }
+  
+  p {
+    color: #1d1616;
     margin-bottom: 25px;
-}
-
-.redirect-message {
+  }
+  
+  .redirect-message {
     font-size: 14px;
     margin-top: 20px;
-    color: #777;
-}
-
-.countdown {
+    color: #1d1616;
+  }
+  
+  .countdown {
     font-weight: bold;
     font-size: 24px;
-    color: #555;
+    color: #8e1616;
     margin: 15px 0;
-}
-
-.login-link {
+  }
+  
+  .login-link {
     display: inline-block;
     text-decoration: none;
-    background: linear-gradient(135deg, #71b7e6, #9b59b6);
-    color: white;
+    background: linear-gradient(135deg, #8e1616, #d84040);
+    color: #eeeeee;
     padding: 10px 20px;
     border-radius: 4px;
     font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.login-link:hover {
-    background: linear-gradient(-135deg, #71b7e6, #9b59b6);
-}
+    transition: all 0.3s;
+  }
+  
+  .login-link:hover {
+    background: linear-gradient(-135deg, #8e1616, #d84040);
+  }
+  
+  

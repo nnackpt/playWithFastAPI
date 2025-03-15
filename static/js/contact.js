@@ -87,4 +87,42 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.display = 'none';
         }, 300);
     }
+    // User profile display logic
+    const logoElement = document.querySelector('.logo');
+    const userProfileNav = document.getElementById('user-profile-nav');
+    const profileImg = document.getElementById('nav-profile-image');
+    
+    // Check if user is logged in by looking for the element with the username
+    const usernameElement = document.getElementById('nav-username');
+    const username = usernameElement ? usernameElement.textContent.trim() : '';
+
+    const isLoggedIn = username && username !== 'None' && username !== '{{ username }}';
+    
+    if (isLoggedIn) {
+        // If logged in, hide the logo and show the user profile
+        logoElement.style.display = 'none';
+        userProfileNav.style.display = 'flex';
+        
+        // Fix the profile image path
+        // First try to load from the API if possible
+        fetch('/api/user-profile')
+            .then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Failed to fetch profile data');
+            })
+            .then(data => {
+                if (data.profile_image) {
+                    profileImg.src = data.profile_image;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading profile:', error);
+                // Fallback to a known working placeholder
+                profileImg.src = "/static/uploads/profile_images/avatar-placeholder.jpg";
+            });
+    } else {
+        // If not logged in, show the logo and hide the user profile
+        logoElement.style.display = 'block';
+        userProfileNav.style.display = 'none';
+    }
 });

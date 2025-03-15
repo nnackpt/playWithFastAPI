@@ -37,6 +37,10 @@ body {
     margin-right: auto;
 }
 
+.logo.hidden {
+  display: none;
+}
+
 .nav-links {
     display: flex;
     list-style: none;
@@ -75,6 +79,10 @@ body {
 
 .nav-links a:hover::after {
     width: 100%;
+}
+
+.user-profile-nav.hidden {
+  display: none;
 }
 
 .auth-btn {
@@ -410,21 +418,22 @@ body {
 }
 
 .profile-section h2 {
-  position: sticky;
-    top: 0;
-    background-color: white;
-    margin-top: 0;
-    margin-bottom: 25px;
-    color: #333;
-    font-weight: 600;
-    border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 10px;
-    padding-top: 10px;
-    z-index: 10;
+  position: relative;
+  top: 0;
+  background-color: white;
+  margin-top: 0;
+  margin-bottom: 25px;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  z-index: 10;
 }
 
 .form-group {
   margin-bottom: 20px;
+  position: relative;
 }
 
 .form-group label {
@@ -558,4 +567,42 @@ body {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 30px;
+}
+
+.user-profile-nav {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+  margin-right: auto;
+}
+
+#nav-profile-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  margin-right: 10px;
+}
+
+#nav-username {
+  color: white;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* Adjust the logo position */
+.logo {
+  margin-right: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-profile-nav {
+      margin-left: 10px;
+  }
+  
+  #nav-username {
+      display: none; /* Hide username on small screens */
+  }
 }

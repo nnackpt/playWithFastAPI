@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, Form, Depends, BackgroundTasks, Cookie
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Form, Depends, BackgroundTasks, Cookie, File, UploadFile, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -9,6 +9,9 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 import os
+import shutil
+from typing import Optional
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -17,7 +20,26 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+UPLOAD_DIRECTORY = "static/uploads/profile_images"
+os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
+
 password_reset_tokens = {}
+
+class UserProfileUpdate(BaseModel):
+    full_name: str
+    email: str
+    phone_number: str
+    gender: str
+
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str
+    confirm_password: str
+
+class UserPreferences(BaseModel):
+    email_notifications: bool
+    dark_mode: bool
+    language: str
 
 def get_db():
     db = database.SessionLocal()
@@ -88,6 +110,7 @@ async def process_login(request: Request, username: str = Form(...), password: s
         response = RedirectResponse("/home", status_code=302)
         response.set_cookie(key="user_logged_in", value="true", httponly=True)
         response.set_cookie(key="username", value=username, httponly=True)
+        response.set_cookie(key="user_id", value=str(user.id), httponly=True)
         return response
     else:
         return templates.TemplateResponse("login.html", {"request": request, "error_message": "Invalid username or password"})
@@ -200,22 +223,187 @@ async def read_home(request: Request):
     })
 
 @app.get("/profile", response_class=HTMLResponse)
-async def read_profile(request: Request):
+async def read_profile(request: Request, db: Session = Depends(get_db)):
     user_logged_in = request.cookies.get("user_logged_in") == "true"
     if not user_logged_in:
         return RedirectResponse("/login-page", status_code=302)
     
     username = request.cookies.get("username")
+    user_id = request.cookies.get("user_id")
+
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        return RedirectResponse("/logout", status_code=302)
+
     return templates.TemplateResponse("profile.html", {
         "request": request,
         "username": username,
+        "user": user
     })
+
+@app.get("/api/user-profile", response_class=JSONResponse)
+async def get_user_profile(request: Request, db: Session = Depends(get_db)):
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    preferences = db.query(database.UserPreferences).filter(database.UserPreferences.user_id == user_id).first()
+    
+    user_data = {
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone_number": user.phone_number,
+        "gender": user.gender,
+        "profile_image": user.profile_image or "/static/images/avatar-placeholder.jpg",
+        "preferences": {
+            "email_notifications": preferences.email_notifications if preferences else True,
+            "dark_mode": preferences.dark_mode if preferences else False,
+            "language": preferences.language if preferences else "en"
+        }
+    }
+    
+    return user_data
+
+@app.post("/api/update-profile")
+async def update_profile(
+    request: Request,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    gender: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.full_name = full_name
+    user.email = email
+    user.phone_number = phone_number
+    user.gender = gender
+    
+    db.commit()
+    
+    return {"message": "Profile updated successfully"}
+
+@app.post("/api/update-password")
+async def update_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.hashed_password != current_password:
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    if new_password != confirm_password:
+        raise HTTPException(status_code=400, detail="New passwords do not match")
+    
+    user.hashed_password = new_password
+    db.commit()
+    
+    return {"message": "Password updated successfully"}
+
+@app.post("/api/update-preferences")
+async def update_preferences(
+    request: Request,
+    email_notifications: bool = Form(False),
+    dark_mode: bool = Form(False),
+    language: str = Form("en"),
+    db: Session = Depends(get_db)
+):
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    preferences = db.query(database.UserPreferences).filter(database.UserPreferences.user_id == user_id).first()
+    
+    if preferences:
+        preferences.email_notifications = email_notifications
+        preferences.dark_mode = dark_mode
+        preferences.language = language
+    else:
+        preferences = database.UserPreferences(
+            user_id=user_id,
+            email_notifications=email_notifications,
+            dark_mode=dark_mode,
+            language=language
+        )
+        db.add(preferences)
+    
+    db.commit()
+    
+    return {"message": "Preferences saved successfully"}
+
+@app.post("/api/upload-profile-image")
+async def upload_profile_image(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    user_id = request.cookies.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    user = db.query(database.User).filter(database.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"profile_{user_id}_{secrets.token_hex(8)}{file_extension}"
+    file_path = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
+    
+    relative_path = f"/static/uploads/profile_images/{unique_filename}"
+    
+    if user.profile_image and os.path.exists(user.profile_image.replace("/static/", "", 1)):
+        try:
+            old_image_path = user.profile_image.replace("/static/", "static/", 1)
+            if os.path.isfile(old_image_path):
+                os.remove(old_image_path)
+        except Exception as e:
+            print(f"Could not delete old profile image: {e}")
+    
+    user.profile_image = relative_path
+    db.commit()
+    
+    return {"message": "Profile image updated successfully", "image_url": relative_path}
 
 @app.get("/logout", response_class=HTMLResponse)
 async def logout(request: Request):
     response = RedirectResponse("/home", status_code=302)
     response.delete_cookie("user_logged_in")
     response.delete_cookie("username")
+    response.delete_cookie("user_id")
     return response
 
 @app.get("/register", response_class=HTMLResponse)

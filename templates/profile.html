@@ -11,7 +11,10 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a class="logo">Play With FastAPI</a>
+            <div class="user-profile-nav" id="user-profile-nav">
+                <img src="/static/img/avatar-placeholder.jpg" alt="Profile Picture" id="nav-profile-image">
+                <span id="nav-username">{{ username }}</span>
+            </div>
             <ul class="nav-links" id="navLinks">
                 <li><a href="/home" class="active">Home</a></li>   
                 <li><a href="/profile">Profile</a></li>
@@ -72,7 +75,6 @@
                             <select id="gender" name="gender">
                                 <option value="male">Male</option>
                                 <option value="female">Female</option>
-                                <option value="other">Other</option>
                                 <option value="prefer-not-to-say">Prefer not to say</option>
                             </select>
                         </div>
@@ -145,8 +147,6 @@
                             <select id="language" name="language">
                                 <option value="en">English</option>
                                 <option value="th">Thai</option>
-                                <option value="es">Spanish</option>
-                                <option value="fr">French</option>
                             </select>
                         </div>
                         <div class="form-buttons">

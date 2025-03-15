@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const personalInfoForm = document.getElementById('personal-info-form');
+    const personalInfoForm = document.getElementById('personal-info');
     if (personalInfoForm) {
         personalInfoForm.addEventListener('wheel', function(e) {
             // Prevent the default scroll behavior
             e.preventDefault();
+            e.stopPropagation();
         }, { passive: false });
     }
+    
     // Load user data from API
     loadUserData();
     
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
         newPasswordInput.addEventListener('input', updatePasswordStrength);
     }
     
-    // Form submissions
+    // Form submissions - connect to our new API endpoints
     setupFormSubmission('personal-info-form', '/api/update-profile', 'Profile information updated successfully!');
     setupFormSubmission('security-form', '/api/update-password', 'Password updated successfully!');
     setupFormSubmission('preferences-form', '/api/update-preferences', 'Preferences saved successfully!');
@@ -70,19 +72,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             fileInput.addEventListener('change', function(e) {
                 if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
                     const reader = new FileReader();
                     
                     reader.onload = function(event) {
+                        // Show preview immediately for better UX
                         document.getElementById('profile-image').src = event.target.result;
                         
-                        // TODO: Upload to server
-                        // uploadProfileImage(e.target.files[0]);
-                        
-                        // Show success message
-                        showSuccessModal('Profile picture updated successfully!');
+                        // Upload to server
+                        uploadProfileImage(file);
                     };
                     
-                    reader.readAsDataURL(e.target.files[0]);
+                    reader.readAsDataURL(file);
                 }
             });
             
@@ -100,44 +101,74 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Function to load user data from API
-function loadUserData() {
-    // In a real application, this would fetch data from your API
-    // For now, we'll simulate with sample data
-    const userData = {
-        full_name: "User Name",
-        email: "user@example.com",
-        phone_number: "+66 123 456 789",
-        gender: "male",
-        preferences: {
-            email_notifications: true,
-            dark_mode: false,
-            language: "en"
+async function loadUserData() {
+    try {
+        const response = await fetch('/api/user-profile');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load user data');
         }
-    };
-    
-    // Fill form fields with user data
-    if (document.getElementById('full-name')) {
-        document.getElementById('full-name').value = userData.full_name;
-    }
-    if (document.getElementById('email')) {
-        document.getElementById('email').value = userData.email;
-    }
-    if (document.getElementById('phone')) {
-        document.getElementById('phone').value = userData.phone_number;
-    }
-    if (document.getElementById('gender')) {
-        document.getElementById('gender').value = userData.gender;
-    }
-    
-    // Set preferences
-    if (document.querySelector('input[name="email_notifications"]')) {
-        document.querySelector('input[name="email_notifications"]').checked = userData.preferences.email_notifications;
-    }
-    if (document.querySelector('input[name="dark_mode"]')) {
-        document.querySelector('input[name="dark_mode"]').checked = userData.preferences.dark_mode;
-    }
-    if (document.getElementById('language')) {
-        document.getElementById('language').value = userData.preferences.language;
+        
+        const userData = await response.json();
+        
+        // Fill form fields with user data
+        if (document.getElementById('full-name')) {
+            document.getElementById('full-name').value = userData.full_name;
+        }
+        if (document.getElementById('email')) {
+            document.getElementById('email').value = userData.email;
+        }
+        if (document.getElementById('phone')) {
+            document.getElementById('phone').value = userData.phone_number;
+        }
+        if (document.getElementById('gender')) {
+            const genderSelect = document.getElementById('gender');
+            const genderValue = userData.gender.toLowerCase();
+            
+            const genderOptions = genderSelect.options;
+            let valueExists = false;
+            
+            for (let i = 0; i < genderOptions.length; i++) {
+                if (genderOptions[i].value === genderValue) {
+                    valueExists = true;
+                    break;
+                }
+            }
+            
+            if (valueExists) {
+                genderSelect.value = genderValue;
+            } else {
+                console.log('Gender value from API not found in dropdown options:', genderValue);
+            }
+        }
+        
+        // Set profile image
+        if (userData.profile_image && document.getElementById('profile-image')) {
+            document.getElementById('profile-image').src = userData.profile_image;
+        }
+
+        if (userData.profile_image) {
+            const navProfileImage = document.getElementById('nav-profile-image');
+            if (navProfileImage) {
+                navProfileImage.src = userData.profile_image;
+            }
+        }
+        
+        // Set preferences
+        if (userData.preferences) {
+            if (document.querySelector('input[name="email_notifications"]')) {
+                document.querySelector('input[name="email_notifications"]').checked = userData.preferences.email_notifications;
+            }
+            if (document.querySelector('input[name="dark_mode"]')) {
+                document.querySelector('input[name="dark_mode"]').checked = userData.preferences.dark_mode;
+            }
+            if (document.getElementById('language')) {
+                document.getElementById('language').value = userData.preferences.language;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user data:', error);
+        // Optionally show error message to user
     }
 }
 
@@ -145,37 +176,75 @@ function loadUserData() {
 function setupFormSubmission(formId, endpoint, successMessage) {
     const form = document.getElementById(formId);
     if (form) {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             // Create form data
             const formData = new FormData(form);
-            const data = {};
-            for (const [key, value] of formData.entries()) {
-                data[key] = value;
-            }
-            
-            // In a real application, you would send this data to your server
-            console.log(`Submitting to ${endpoint}:`, data);
-            
-            // Simulate API call with timeout
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
             
             // Show loading state
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             submitBtn.disabled = true;
             
-            // Simulate API call (replace with actual fetch in production)
-            setTimeout(() => {
-                // Reset button
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                // Handle response
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Something went wrong');
+                }
                 
                 // Show success message
                 showSuccessModal(successMessage);
-            }, 1000);
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                showSuccessModal('Error: ' + error.message, 'error');
+            } finally {
+                // Reset button state
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
         });
+    }
+}
+
+// Function to upload profile image
+async function uploadProfileImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+        const response = await fetch('/api/upload-profile-image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to upload image');
+        }
+        
+        const data = await response.json();
+        
+        // Update image src with the url returned from server
+        if (data.image_url) {
+            document.getElementById('profile-image').src = data.image_url;
+        }
+        
+        // Show success message
+        showSuccessModal('Profile picture updated successfully!');
+    } catch (error) {
+        console.error('Error uploading profile image:', error);
+        showSuccessModal('Error: ' + error.message, 'error');
+        
+        // Reset to placeholder if upload failed
+        document.getElementById('profile-image').src = '/static/images/avatar-placeholder.jpg';
     }
 }
 
@@ -255,44 +324,60 @@ function setupSuccessModal() {
 }
 
 // Function to show success modal
-function showSuccessModal(message) {
+function showSuccessModal(message, type = 'success') {
     const modal = document.getElementById('success-modal');
     const messageElement = document.getElementById('success-message');
+    const modalContent = modal.querySelector('.modal-content');
+    const modalHeader = modal.querySelector('.modal-header h3');
     
+    // Set message
     messageElement.textContent = message;
+    
+    // Set type-specific styling
+    if (type === 'error') {
+        modalHeader.textContent = 'Error';
+        modalContent.classList.add('error');
+    } else {
+        modalHeader.textContent = 'Success';
+        modalContent.classList.remove('error');
+    }
+    
+    // Show modal
     modal.style.display = 'flex';
     
     // Add class for animation
     setTimeout(() => {
-        modal.querySelector('.modal-content').classList.add('show');
+        modalContent.classList.add('show');
     }, 10);
 }
 
 // Setup logout modal
 function setupLogoutModal() {
-    // Create modal elements
-    const modalHTML = `
-        <div id="logout-modal" class="custom-modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Log Out?</h3>
-                    <span class="close-modal">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to log out?</p>
-                </div>
-                <div class="modal-footer">
-                    <button id="cancel-logout" class="btn cancel-btn">Cancel</button>
-                    <button id="confirm-logout" class="btn confirm-btn">
-                        <i class="fas fa-sign-out-alt"></i> Yes, Log Out
-                    </button>
+    // Create modal elements if they don't exist
+    if (!document.getElementById('logout-modal')) {
+        const modalHTML = `
+            <div id="logout-modal" class="custom-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Log Out?</h3>
+                        <span class="close-modal">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to log out?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="cancel-logout" class="btn cancel-btn">Cancel</button>
+                        <button id="confirm-logout" class="btn confirm-btn">
+                            <i class="fas fa-sign-out-alt"></i> Yes, Log Out
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-    
-    // Append modal to body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+        `;
+        
+        // Append modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
     
     // Get modal elements
     const modal = document.getElementById('logout-modal');

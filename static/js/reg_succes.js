@@ -7,6 +7,6 @@ let secondsLeft = 5;
             
             if (secondsLeft <= 0) {
                 clearInterval(timer);
-                window.location.href = '/';
+                window.location.href = '/login-page';
             }
         }, 1000);
